@@ -1,28 +1,34 @@
-import React, { PureComponent } from 'react'
+import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 
 export default class DataCell extends PureComponent {
   constructor(props) {
     super(props);
-    this.state = {updated: false}
+    this.state = { updated: false };
   }
 
   componentWillUpdate(nextProps) {
     if (nextProps.value !== this.props.value) {
-      this.setState({updated: true});
-      this.timeout = setTimeout(() => this.setState({updated: false}), 700);
+      this.setState({ updated: true });
+      this.timeout = setTimeout(() => this.setState({ updated: false }), 700);
     }
   }
 
   componentDidUpdate(prevProps) {
-    if (prevProps.editing === true && this.props.editing === false && this.props.reverting === false) {
+    if (
+      prevProps.editing === true &&
+      this.props.editing === false &&
+      this.props.reverting === false
+    ) {
       this.onChange(this._input.value);
     }
     if (prevProps.editing === false && this.props.editing === true) {
       if (this.props.clear) {
         this._input.value = '';
       } else {
-        this._input.value = this.props.data === null ? this.props.value : this.props.data;
+        this._input.value = this.props.data === null
+          ? this.props.value
+          : this.props.data;
       }
       this._input.focus();
     }
@@ -33,12 +39,29 @@ export default class DataCell extends PureComponent {
   }
 
   onChange(value) {
-    const initialData = this.props.data === null ? this.props.value : this.props.data;
-    (value === '' || initialData !== value) && this.props.onChange(this.props.row, this.props.col, value);
+    const initialData = this.props.data === null
+      ? this.props.value
+      : this.props.data;
+    (value === '' || initialData !== value) &&
+      this.props.onChange(this.props.row, this.props.col, value);
   }
 
   render() {
-    const {row, col, rowSpan, readOnly, colSpan, value, className, editing, selected, onMouseDown, onMouseOver, onDoubleClick, onContextMenu} = this.props;
+    const {
+      row,
+      col,
+      rowSpan,
+      readOnly,
+      colSpan,
+      value,
+      className,
+      editing,
+      selected,
+      onMouseDown,
+      onMouseOver,
+      onDoubleClick,
+      onContextMenu
+    } = this.props;
     return (
       <td
         className={[
@@ -48,18 +71,22 @@ export default class DataCell extends PureComponent {
           editing && 'editing',
           readOnly && 'read-only',
           this.state.updated && 'updated'
-        ].filter(a => a).join(' ') }
-        onMouseDown={()=> onMouseDown(row,col)}
-        onDoubleClick={()=> onDoubleClick(row,col)}
-        onMouseOver={()=> onMouseOver(row,col)}
-        onContextMenu={(e) => onContextMenu(e, row, col)}
+        ]
+          .filter(a => a)
+          .join(' ')}
+        onMouseDown={() => onMouseDown(row, col)}
+        onDoubleClick={() => onDoubleClick(row, col)}
+        onMouseOver={() => onMouseOver(row, col)}
+        onContextMenu={e => onContextMenu(e, row, col)}
         colSpan={colSpan || 1}
-        rowSpan={rowSpan || 1}
-      >
-        <span style={{display: (editing && selected) ? 'none':'block'}}>
+        rowSpan={rowSpan || 1}>
+        <span style={{ display: editing && selected ? 'none' : 'block' }}>
           {value}
         </span>
-        <input style={{display: (editing && selected) ? 'block' : 'none'}} ref={(input) => this._input = input}/>
+        <input
+          style={{ display: editing && selected ? 'block' : 'none' }}
+          ref={input => (this._input = input)}
+        />
       </td>
     );
   }

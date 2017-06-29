@@ -3,43 +3,42 @@ import PropTypes from 'prop-types';
 import DataCell from './DataCell';
 import ComponentCell from './ComponentCell';
 
-const TAB_KEY           =  9;
-const ENTER_KEY         = 13;
-const ESCAPE_KEY        = 27;
-const LEFT_KEY          = 37;
-const UP_KEY            = 38;
-const RIGHT_KEY         = 39;
-const DOWN_KEY          = 40;
-const DELETE_KEY        = 46;
-const BACKSPACE_KEY     =  8;
+const TAB_KEY = 9;
+const ENTER_KEY = 13;
+const ESCAPE_KEY = 27;
+const LEFT_KEY = 37;
+const UP_KEY = 38;
+const RIGHT_KEY = 39;
+const DOWN_KEY = 40;
+const DELETE_KEY = 46;
+const BACKSPACE_KEY = 8;
 
-const isEmpty = (obj) => Object.keys(obj).length === 0;
+const isEmpty = obj => Object.keys(obj).length === 0;
 
 const range = (start, end) => {
   const array = [];
-  const inc = (end - start > 0);
-  for (let i = start; inc ? (i <= end) : (i >= end); inc ? i++ : i--) {
-    inc ? array.push(i) : array.unshift(i)
+  const inc = end - start > 0;
+  for (let i = start; inc ? i <= end : i >= end; inc ? i++ : i--) {
+    inc ? array.push(i) : array.unshift(i);
   }
   return array;
 };
 
-const nullFtn = (obj) => {};
+const nullFtn = obj => {};
 
 export default class DataSheet extends PureComponent {
-
   constructor(props) {
     super(props);
-    this.onMouseDown   = this.onMouseDown.bind(this);
-    this.onMouseUp     = this.onMouseUp.bind(this);
-    this.onMouseOver   = this.onMouseOver.bind(this);
+    this.onMouseDown = this.onMouseDown.bind(this);
+    this.onMouseUp = this.onMouseUp.bind(this);
+    this.onMouseOver = this.onMouseOver.bind(this);
     this.onDoubleClick = this.onDoubleClick.bind(this);
     this.onContextMenu = this.onContextMenu.bind(this);
-    this.handleKey     = this.handleKey.bind(this);
-    this.handleCopy    = this.handleCopy.bind(this);
-    this.handlePaste   = this.handlePaste.bind(this);
-    this.pageClick     = this.pageClick.bind(this);
-    this.onChange      = this.onChange.bind(this);
+    this.handleKey = this.handleKey.bind(this);
+    this.handleCopy = this.handleCopy.bind(this);
+    this.handlePaste = this.handlePaste.bind(this);
+    this.pageClick = this.pageClick.bind(this);
+    this.onChange = this.onChange.bind(this);
 
     this.defaultState = {
       start: {},
@@ -56,11 +55,11 @@ export default class DataSheet extends PureComponent {
   }
 
   removeAllListeners() {
-    document.removeEventListener('keydown',   this.handleKey);
+    document.removeEventListener('keydown', this.handleKey);
     document.removeEventListener('mousedown', this.pageClick);
-    document.removeEventListener('mouseup',   this.onMouseUp);
-    document.removeEventListener('copy',      this.handleCopy);
-    document.removeEventListener('paste',     this.handlePaste);
+    document.removeEventListener('mouseup', this.onMouseUp);
+    document.removeEventListener('copy', this.handleCopy);
+    document.removeEventListener('paste', this.handlePaste);
   }
 
   componentWillUnmount() {
@@ -75,83 +74,99 @@ export default class DataSheet extends PureComponent {
   }
 
   handleCopy(e) {
-    if(isEmpty(this.state.editing)) {
+    if (isEmpty(this.state.editing)) {
       e.preventDefault();
-      const {dataRenderer, valueRenderer, data} = this.props;
-      const {start, end} = this.state;
+      const { dataRenderer, valueRenderer, data } = this.props;
+      const { start, end } = this.state;
 
-
-      const text = range(start.i, end.i).map((i) =>
-        range(start.j, end.j).map(j => {
-          const cell = data[i][j];
-          const value = dataRenderer ? dataRenderer(cell, i, j) : null;
-          if (value === '' || value === null || typeof(value) === 'undefined') {
-            return valueRenderer(cell, i, j);
-          }
-          return value;
-        }).join('\t')
-      ).join('\n');
+      const text = range(start.i, end.i)
+        .map(i =>
+          range(start.j, end.j)
+            .map(j => {
+              const cell = data[i][j];
+              const value = dataRenderer ? dataRenderer(cell, i, j) : null;
+              if (
+                value === '' ||
+                value === null ||
+                typeof value === 'undefined'
+              ) {
+                return valueRenderer(cell, i, j);
+              }
+              return value;
+            })
+            .join('\t')
+        )
+        .join('\n');
       e.clipboardData.setData('text/plain', text);
     }
   }
 
   handlePaste(e) {
-    if(isEmpty(this.state.editing)) {
+    if (isEmpty(this.state.editing)) {
       const start = this.state.start;
 
       const pastedMap = [];
       const pasteData = e.clipboardData
         .getData('text/plain')
         .split(/\n|\r/)
-        .map((row) => row.split('\t'));
+        .map(row => row.split('\t'));
       let end = {};
 
       pasteData.map((row, i) => {
         const rowData = [];
         row.map((pastedData, j) => {
-          const cell = this.props.data[start.i + i] && this.props.data[start.i + i][start.j + j];
-          rowData.push({cell: cell, data: pastedData});
+          const cell =
+            this.props.data[start.i + i] &&
+            this.props.data[start.i + i][start.j + j];
+          rowData.push({ cell: cell, data: pastedData });
           if (cell && !cell.readOnly && !this.props.onPaste) {
             this.onChange(start.i + i, start.j + j, pastedData);
-            end = {i: start.i + i, j: start.j + j};
+            end = { i: start.i + i, j: start.j + j };
           }
-
         });
         pastedMap.push(rowData);
       });
       this.props.onPaste && this.props.onPaste(pastedMap);
-      this.setState({end: end});
+      this.setState({ end: end });
     }
   }
 
   handleKeyboardCellMovement(e) {
-    const {start, editing} = this.state;
-    const {data} = this.props;
+    const { start, editing } = this.state;
+    const { data } = this.props;
     const currentCell = data[start.i][start.j];
     let newLocation = null;
 
     if (
-      (this.state.forceEdit || currentCell.component !== undefined)
-      && !isEmpty(this.state.editing)
-      && e.keyCode !== TAB_KEY
+      (this.state.forceEdit || currentCell.component !== undefined) &&
+      !isEmpty(this.state.editing) &&
+      e.keyCode !== TAB_KEY
     ) {
       return false;
     } else if (e.keyCode === TAB_KEY && !e.shiftKey) {
-      newLocation = {i : start.i, j: start.j + 1};
-      newLocation = typeof(data[newLocation.i][newLocation.j]) !== 'undefined' ? newLocation : { i : start.i + 1, j: 0}
+      newLocation = { i: start.i, j: start.j + 1 };
+      newLocation = typeof data[newLocation.i][newLocation.j] !== 'undefined'
+        ? newLocation
+        : { i: start.i + 1, j: 0 };
     } else if (e.keyCode === RIGHT_KEY) {
-      newLocation = {i: start.i, j: start.j + 1}
-    } else if (e.keyCode === LEFT_KEY || e.keyCode === TAB_KEY && e.shiftKey) {
-      newLocation = {i : start.i, j: start.j - 1}
+      newLocation = { i: start.i, j: start.j + 1 };
+    } else if (
+      e.keyCode === LEFT_KEY ||
+      (e.keyCode === TAB_KEY && e.shiftKey)
+    ) {
+      newLocation = { i: start.i, j: start.j - 1 };
     } else if (e.keyCode === UP_KEY) {
-      newLocation = {i: start.i - 1, j: start.j}
+      newLocation = { i: start.i - 1, j: start.j };
     } else if (e.keyCode === DOWN_KEY) {
-      newLocation = {i: start.i + 1, j: start.j}
+      newLocation = { i: start.i + 1, j: start.j };
     }
 
-
-    if (newLocation && data[newLocation.i] && typeof(data[newLocation.i][newLocation.j]) !== 'undefined') {
-      this.setState({start: newLocation, end: newLocation, editing: {}});
+    if (
+      newLocation &&
+      data[newLocation.i] &&
+      typeof data[newLocation.i][newLocation.j] !== 'undefined'
+    ) {
+      this.setState({ start: newLocation, end: newLocation, editing: {} });
     }
     if (newLocation) {
       e.preventDefault();
@@ -164,55 +179,70 @@ export default class DataSheet extends PureComponent {
     let selected = [];
     range(start.i, end.i).map(i => {
       range(start.j, end.j).map(j => {
-        selected.push({cell: data[i][j], i, j});
-      })
+        selected.push({ cell: data[i][j], i, j });
+      });
     });
     return selected;
   }
 
   handleKey(e) {
-    const {start, end, editing} = this.state;
+    const { start, end, editing } = this.state;
     const data = this.props.data;
     const isEditing = !isEmpty(editing);
     const noCellsSelected = isEmpty(start);
     const ctrlKeyPressed = e.ctrlKey || e.metaKey;
-    const deleteKeysPressed = (e.keyCode === DELETE_KEY || e.keyCode === BACKSPACE_KEY);
+    const deleteKeysPressed =
+      e.keyCode === DELETE_KEY || e.keyCode === BACKSPACE_KEY;
     const enterKeyPressed = e.keyCode === ENTER_KEY;
     const escapeKeyPressed = e.keyCode === ESCAPE_KEY;
-    const numbersPressed = (e.keyCode >= 48 && e.keyCode <= 57);
-    const lettersPressed = (e.keyCode >= 65 && e.keyCode <= 90);
-    const numPadKeysPressed = (e.keyCode >= 96 && e.keyCode <= 105);
+    const numbersPressed = e.keyCode >= 48 && e.keyCode <= 57;
+    const lettersPressed = e.keyCode >= 65 && e.keyCode <= 90;
+    const numPadKeysPressed = e.keyCode >= 96 && e.keyCode <= 105;
     const cell = data[start.i][start.j];
-    const equationKeysPressed = [
-      187, /* equal */
-      189, /* substract */
-      190, /* period */
-      107, /* add */
-      109, /* decimal point */
-      110
-    ].indexOf(e.keyCode) > -1;
+    const equationKeysPressed =
+      [
+        187 /* equal */,
+        189 /* substract */,
+        190 /* period */,
+        107 /* add */,
+        109 /* decimal point */,
+        110
+      ].indexOf(e.keyCode) > -1;
 
-    if (noCellsSelected || ctrlKeyPressed || this.handleKeyboardCellMovement(e)) {
+    if (
+      noCellsSelected ||
+      ctrlKeyPressed ||
+      this.handleKeyboardCellMovement(e)
+    ) {
       return true;
     }
 
-
     if (deleteKeysPressed && !isEditing) {
-      this.getSelectedCells(data, start, end).map(({cell, i, j}) =>
-        (!cell.readOnly) ? this.onChange(i, j, '') : null
+      const selectedCells = this.getSelectedCells(data, start, end);
+      selectedCells.map(
+        ({ cell, i, j }, index) =>
+          !cell.readOnly
+            ? this.onChange(i, j, '', selectedCells.length === index + 1)
+            : null
       );
       e.preventDefault();
     } else if (enterKeyPressed && isEditing) {
-      this.setState({editing: {}, reverting: {}});
+      this.setState({ editing: {}, reverting: {} });
     } else if (escapeKeyPressed && isEditing) {
-      this.setState({editing: {}, reverting: editing});
-    } else if (enterKeyPressed && !isEditing  && !cell.readOnly) {
-      this.setState({editing: start, clear: {}, reverting: {}, forceEdit: true});
-    } else if (numbersPressed
-      || numPadKeysPressed
-      || lettersPressed
-      || equationKeysPressed
-      || enterKeyPressed
+      this.setState({ editing: {}, reverting: editing });
+    } else if (enterKeyPressed && !isEditing && !cell.readOnly) {
+      this.setState({
+        editing: start,
+        clear: {},
+        reverting: {},
+        forceEdit: true
+      });
+    } else if (
+      numbersPressed ||
+      numPadKeysPressed ||
+      lettersPressed ||
+      equationKeysPressed ||
+      enterKeyPressed
     ) {
       //empty out cell if user starts typing without pressing enter
       if (!isEditing && !cell.readOnly) {
@@ -235,13 +265,24 @@ export default class DataSheet extends PureComponent {
 
   onDoubleClick(i, j) {
     let cell = this.props.data[i][j];
-    (!cell.readOnly) ? this.setState({editing: {i:i, j:j}, forceEdit: true, clear: {}}) : null;
+    !cell.readOnly
+      ? this.setState({ editing: { i: i, j: j }, forceEdit: true, clear: {} })
+      : null;
   }
 
   onMouseDown(i, j) {
-    let editing = (isEmpty(this.state.editing) || this.state.editing.i !== i || this.state.editing.j !== j)
-      ? {} : this.state.editing;
-    this.setState({selecting: true, start:{i, j}, end:{i, j}, editing: editing, forceEdit: false});
+    let editing = isEmpty(this.state.editing) ||
+      this.state.editing.i !== i ||
+      this.state.editing.j !== j
+      ? {}
+      : this.state.editing;
+    this.setState({
+      selecting: true,
+      start: { i, j },
+      end: { i, j },
+      editing: editing,
+      forceEdit: false
+    });
 
     //Keep listening to mouse if user releases the mouse (dragging outside)
     document.addEventListener('mouseup', this.onMouseUp);
@@ -256,89 +297,125 @@ export default class DataSheet extends PureComponent {
   }
 
   onMouseOver(i, j) {
-    (this.state.selecting && isEmpty(this.state.editing)) ? this.setState({end: {i, j}}) : null;
+    this.state.selecting && isEmpty(this.state.editing)
+      ? this.setState({ end: { i, j } })
+      : null;
   }
 
   onMouseUp() {
-    this.setState({selecting: false});
+    this.setState({ selecting: false });
     document.removeEventListener('mouseup', this.onMouseUp);
   }
 
-  onChange(i, j, val) {
+  onChange(i, j, val, lastIndex) {
     this.props.onChange(this.props.data[i][j], i, j, val);
-    this.setState({editing: {}});
+    if (typeof lastIndex !== 'undefined') {
+      this.setState({ editing: {}, deletingArray: !lastIndex });
+    } else {
+      this.setState({ editing: {} });
+    }
   }
 
   componentDidUpdate(prevProps, prevState) {
     let prevEnd = prevState.end;
-    if (!isEmpty(this.state.end) && !(this.state.end.i === prevEnd.i && this.state.end.j === prevEnd.j)) {
-      this.props.onSelect && this.props.onSelect(this.props.data[this.state.end.i][this.state.end.j]);
+    if (
+      !isEmpty(this.state.end) &&
+      !(this.state.end.i === prevEnd.i && this.state.end.j === prevEnd.j)
+    ) {
+      this.props.onSelect &&
+        this.props.onSelect(
+          this.props.data[this.state.end.i][this.state.end.j]
+        );
     }
   }
 
+  shouldComponentUpdate(nextProps, nextState) {
+    if (nextState.deletingArray) return false;
+    if (!nextState.deletingArray && this.state.deletingArray) return true;
+    if (
+      this.state.start.i === nextState.start.i &&
+      this.state.start.j === nextState.start.j &&
+      this.state.end.i === nextState.end.i &&
+      this.state.end.j === nextState.end.j &&
+      this.state.forceEdit === nextState.forceEdit &&
+      nextProps.data === this.props.data
+    )
+      return false;
+
+    return true;
+  }
+
   render() {
-    const {dataRenderer, valueRenderer, className} = this.props;
-
+    const { dataRenderer, valueRenderer, className } = this.props;
+    const { editing, reverting, clear, start, end } = this.state;
     const isSelected = (i, j) => {
-      const start = this.state.start;
-      const end = this.state.end;
-      const posX = (j >= start.j && j <= end.j);
-      const negX = (j <= start.j && j >= end.j);
-      const posY = (i >= start.i && i <= end.i);
-      const negY = (i <= start.i && i >= end.i);
+      if (!start.i || !start.j || !end.j || !end.i) return false;
+      const posX = j >= start.j && j <= end.j;
+      const negX = j <= start.j && j >= end.j;
+      const posY = i >= start.i && i <= end.i;
+      const negY = i <= start.i && i >= end.i;
 
-      return (posX && posY) ||
-        (negX && posY) ||
-        (negX && negY) ||
-        (posX && negY);
+      return (
+        (posX && posY) || (negX && posY) || (negX && negY) || (posX && negY)
+      );
     };
 
-    const isEditing = (i, j) => this.state.editing.i === i && this.state.editing.j === j;
-    const isReverting = (i, j) => this.state.reverting.i === i && this.state.reverting.j === j;
-    const shouldClear = (i, j) =>  this.state.clear.i === i && this.state.clear.j === j;
+    const isEditing = (i, j) => editing.i === i && editing.j === j;
+    const isReverting = (i, j) => reverting.i === i && reverting.j === j;
+    const shouldClear = (i, j) => clear.i === i && clear.j === j;
 
-    return <table ref={(r) => this.dgDom = r} className={'data-grid ' + (className ?  className : '')}>
-      <tbody>
-      {this.props.data.map((row, i) =>
-        <tr key={this.props.keyFn ? this.props.keyFn(i) : i}>
-        {
-          row.map((cell, j) => {
-            const props = {
-              key: cell.key ? cell.key : j,
-              className: cell.className ? cell.className : '',
-              row: i,
-              col: j,
-              selected: isSelected(i, j),
-              onMouseDown:   cell.disableEvents ? nullFtn : this.onMouseDown,
-              onDoubleClick: cell.disableEvents ? nullFtn : this.onDoubleClick,
-              onMouseOver:   cell.disableEvents ? nullFtn : this.onMouseOver,
-              onContextMenu: cell.disableEvents ? nullFtn : this.onContextMenu,
-              editing: isEditing(i, j),
-              reverting: isReverting(i, j),
-              colSpan: cell.colSpan,
-              value: valueRenderer(cell, i, j),
-            };
-            if (cell.component) {
-              return <ComponentCell
-                {...props}
-                forceComponent={cell.forceComponent || false}
-                component={cell.component}
-              />
-            }
-            return <DataCell
-              {...props}
-              data     = {dataRenderer ? dataRenderer(cell, i, j) : null}
-              clear    = {shouldClear(i, j)}
-              rowSpan  = {cell.rowSpan}
-              onChange = {this.onChange}
-              readOnly = {cell.readOnly}
-             />
-          }
-        )
-      }
-      </tr>)}
-      </tbody>
-    </table>;
+    return (
+      <table
+        ref={r => (this.dgDom = r)}
+        className={'data-grid ' + (className ? className : '')}>
+        <tbody>
+          {this.props.data.map((row, i) => (
+            <tr key={this.props.keyFn ? this.props.keyFn(i) : i}>
+              {row.map((cell, j) => {
+                const props = {
+                  key: cell.key ? cell.key : j,
+                  className: cell.className ? cell.className : '',
+                  row: i,
+                  col: j,
+                  selected: isSelected(i, j),
+                  onMouseDown: cell.disableEvents ? nullFtn : this.onMouseDown,
+                  onDoubleClick: cell.disableEvents
+                    ? nullFtn
+                    : this.onDoubleClick,
+                  onMouseOver: cell.disableEvents ? nullFtn : this.onMouseOver,
+                  onContextMenu: cell.disableEvents
+                    ? nullFtn
+                    : this.onContextMenu,
+                  editing: isEditing(i, j),
+                  reverting: isReverting(i, j),
+                  colSpan: cell.colSpan,
+                  value: valueRenderer(cell, i, j)
+                };
+                if (cell.component) {
+                  return (
+                    <ComponentCell
+                      {...props}
+                      forceComponent={cell.forceComponent || false}
+                      component={cell.component}
+                    />
+                  );
+                }
+                return (
+                  <DataCell
+                    {...props}
+                    data={dataRenderer ? dataRenderer(cell, i, j) : null}
+                    clear={shouldClear(i, j)}
+                    rowSpan={cell.rowSpan}
+                    onChange={this.onChange}
+                    readOnly={cell.readOnly}
+                  />
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
   }
 }
 
@@ -348,5 +425,5 @@ DataSheet.propTypes = {
   onChange: PropTypes.func,
   onContextMenu: PropTypes.func,
   valueRenderer: PropTypes.func.isRequired,
-  dataRenderer: PropTypes.func,
+  dataRenderer: PropTypes.func
 };
