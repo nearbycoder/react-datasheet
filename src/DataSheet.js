@@ -332,15 +332,6 @@ export default class DataSheet extends PureComponent {
   shouldComponentUpdate(nextProps, nextState) {
     if (nextState.deletingArray) return false;
     if (!nextState.deletingArray && this.state.deletingArray) return true;
-    if (
-      this.state.start.i === nextState.start.i &&
-      this.state.start.j === nextState.start.j &&
-      this.state.end.i === nextState.end.i &&
-      this.state.end.j === nextState.end.j &&
-      this.state.forceEdit === nextState.forceEdit &&
-      nextProps.data === this.props.data
-    )
-      return false;
 
     return true;
   }
